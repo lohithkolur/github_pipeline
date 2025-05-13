@@ -1,0 +1,51 @@
+name: "04 - Using Actions"
+
+on:
+   workflow_dispatch:
+
+jobs:
+  Build:
+    name: 'Build'
+    runs-on: ubuntu-latest
+    env:
+        NODE_JS_VERSION: 20.15.1
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: ${{ env.NODE_JS_VERSION }}
+            cache: 'npm'
+            cache-dependency-path: ${{ github.workspace }}/package-lock.json
+        
+        - name: Install Angular
+          run: npm install -g @angular/cli
+
+        - name: Cache Node Modules
+          uses: actions/cache@v4
+          with:
+            path: ~/.npm
+            key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+            restore-keys: |
+              ${{ runner.os }}-node-
+
+        - name: Install NPM Dependencies
+          run: npm i --force
+          working-directory: ${{ github.workspace }}/
+
+        - name: Install Dependencies
+          run: npm install
+
+        - name: Run Tests
+          run: npm test
+
+        - name: Build Project
+          run: npm run build
+
+        - name: Upload Artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: build-artifact
+            path: ${{ github.workspace }}/dist/my-app
